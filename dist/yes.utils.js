@@ -356,7 +356,7 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
             }
         };
     }]);
-angular.module('yes.path').factory('oPath', [
+angular.module('yes.utils').factory('oPath', [
     function () {
         var oPath;
         oPath = (function () {
