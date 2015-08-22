@@ -1,4 +1,4 @@
-angular.module('yes.path').factory('oPath', [
+angular.module('yes.utils').factory('oPath', [
     function () {
         var oPath;
         oPath = (function () {
