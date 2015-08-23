@@ -1,6 +1,7 @@
-angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", "plugins", "utils",
-    function ($stateParams, oPath, ENV, plugins, utils) {
+angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils",
+    function ($stateParams, oPath, utils) {
 
+        var settings = utils.settings || {};
         var injector = angular.element(document.body).injector();
 
         var defaultListOperations = {
@@ -157,7 +158,7 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", 
             if (path.indexOf('http') == 0 || path.indexOf('plugins') > -1)
                 return path;
 
-            var template = [ENV.pluginFolder, $stateParams.name, 'templates', path].join('/').replace(/\/\//g, '/');
+            var template = [settings.pluginFolder, $stateParams.name, 'templates', path].join('/').replace(/\/\//g, '/');
 
             return [utils.root, template].join('/');
         };
@@ -167,7 +168,7 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", 
             __default = angular.extend({list: {}, form: {}}, __default);
             overrideDefault(__default.form, 'template', [utils.root, plugins.templates.detail].join('/'));
             overrideDefault(__default.list, 'template', [utils.root, plugins.templates.list].join('/'));
-            overrideDefault(__default.list, 'pageSize', ENV.pageSize['default']);
+            overrideDefault(__default.list, 'pageSize', settings.pageSize['default']);
             return __default;
         };
 

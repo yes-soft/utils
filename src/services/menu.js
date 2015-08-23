@@ -33,28 +33,25 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
 
         var groupMenus = function (menus) {
             angular.forEach(menus, function (m) {
-                if (m.hasOwnProperty('parent') && angular.isString(m.parent)) {
-                    __menus[m.parent] = __menus[m.parent] || [];
-                    m.subMenus = __menus[m.parent];
-                }
-
                 fixedUrl(m);
 
-                if (m.parent == m.uid && m.type && m.type.toLowerCase() == "menu") {
+                if (angular.isString(m.uid) && m.parent && m.type && m.type.toLowerCase() == "menu") {
+                    __menus[m.parent] = __menus[m.parent] || [];
                     __menus[m.parent].push(m);
                 }
-
             });
         };
 
         var initMenus = function (parentId, menus) {
             groupMenus(menus);
-
-            return menus.filter(
+            var result = menus.filter(
                 function (m) {
+                    m.subMenus = __menus[m.uid];
                     return m.parent == parentId;
                 }
             );
+            console.log(result);
+            return result;
         };
 
         return {

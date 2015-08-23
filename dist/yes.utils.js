@@ -26,9 +26,10 @@ angular.module('yes.utils').factory('authInterceptor', ['$rootScope', '$q', '$wi
     $httpProvider.interceptors.push('authInterceptor');
 }]);
 
-angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", "plugins", "utils",
-    function ($stateParams, oPath, ENV, plugins, utils) {
+angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils",
+    function ($stateParams, oPath, utils) {
 
+        var settings = utils.settings || {};
         var injector = angular.element(document.body).injector();
 
         var defaultListOperations = {
@@ -185,7 +186,7 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", 
             if (path.indexOf('http') == 0 || path.indexOf('plugins') > -1)
                 return path;
 
-            var template = [ENV.pluginFolder, $stateParams.name, 'templates', path].join('/').replace(/\/\//g, '/');
+            var template = [settings.pluginFolder, $stateParams.name, 'templates', path].join('/').replace(/\/\//g, '/');
 
             return [utils.root, template].join('/');
         };
@@ -195,7 +196,7 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "ENV", 
             __default = angular.extend({list: {}, form: {}}, __default);
             overrideDefault(__default.form, 'template', [utils.root, plugins.templates.detail].join('/'));
             overrideDefault(__default.list, 'template', [utils.root, plugins.templates.list].join('/'));
-            overrideDefault(__default.list, 'pageSize', ENV.pageSize['default']);
+            overrideDefault(__default.list, 'pageSize', settings.pageSize['default']);
             return __default;
         };
 
@@ -318,28 +319,25 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
 
         var groupMenus = function (menus) {
             angular.forEach(menus, function (m) {
-                if (m.hasOwnProperty('parent') && angular.isString(m.parent)) {
-                    __menus[m.parent] = __menus[m.parent] || [];
-                    m.subMenus = __menus[m.parent];
-                }
-
                 fixedUrl(m);
 
-                if (m.parent == m.uid && m.type && m.type.toLowerCase() == "menu") {
+                if (angular.isString(m.uid) && m.parent && m.type && m.type.toLowerCase() == "menu") {
+                    __menus[m.parent] = __menus[m.parent] || [];
                     __menus[m.parent].push(m);
                 }
-
             });
         };
 
         var initMenus = function (parentId, menus) {
             groupMenus(menus);
-
-            return menus.filter(
+            var result = menus.filter(
                 function (m) {
+                    m.subMenus = __menus[m.uid];
                     return m.parent == parentId;
                 }
             );
+            console.log(result);
+            return result;
         };
 
         return {
@@ -652,9 +650,45 @@ angular.module('yes.utils').factory('oPath', [
         })();
         return oPath;
     }]);
-angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stateParams", "ENV", 'gateway', 'ngDialog',
-    function ($http, $q, $location, $stateParams, ENV, gateway, ngDialog) {
-        var headers = ENV.headers;
+angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stateParams",
+    function ($http, $q, $location, $stateParams) {
+
+        var injector = angular.element(document.body).injector();
+
+        var settings = {
+            version: "0.0.0",
+            templates: {
+                'layout': 'base/templates/layout.html',
+                'login': 'base/templates/login.html',
+                'dashboard': 'base/templates/dashboard.html',
+                'list': 'base/templates/list.uigrid.html',
+                'detail': 'base/templates/detail.html',
+                'searchCommon': 'base/templates/search-common.html'
+            },
+            gateway: {
+                host: 'self'
+            },
+            runtime: {
+                "mock": true,
+                "menuRoot": null,
+                "menuApi": 'base/menus',
+                "language": navigator.language || navigator.userLanguage,
+                "apiPath": "api",
+                "serverRoot": 'src',
+                "pluginFolder": 'plugins',
+                "pageSize": {
+                    "default": 20,
+                    "more": 10
+                },
+                "debug": true
+            }
+        };
+        if (injector.has('settings'))
+            settings = injector.get('settings') || {};
+
+        var headers = settings.headers;
+        var gateway = settings.gateway;
+
         var cacheContainer = {};
         var __menus = {};
         var handles = {
@@ -759,52 +793,6 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
             bmp: 'ico ico-file ico-file-34'
         };
 
-        var initMenus = function (parentId, menus) {
-            return menus.filter(
-                function (m) {
-
-                    var r = (m.parent == parentId && m.type && m.type.toLowerCase() == "menu");
-
-                    if (m.url == "#")
-                        m.url = "";
-
-                    if (m.url.indexOf(ENV.serverRoot) != 0 && m.url.indexOf('/') === 0 && ENV.serverRoot != "") {
-                        m.url = ENV.serverRoot + m.url;
-                    }
-
-                    if (r) {
-                        m.subMenus = initMenus(m.uid, menus);
-                    }
-                    return r;
-                }
-            );
-        };
-
-        var buildMenuTree = function (menus) {
-            var result = [];
-            angular.forEach(menus, function (r) {
-                var m = {label: r.name, url: r.url, parent: r.parent, uid: r.uid};
-                m.parents = [];
-                findParents(m, m, menus);
-                m.name = m.parents.reverse().join(" > ");
-                result.push(m);
-            });
-            return result;
-        };
-
-        var findParents = function (self, node, menus) {
-            var parent = menus.filter(function (m) {
-                return m.uid == node.parent;
-            });
-
-            if (self.parents.length == 0)
-                self.parents.push(self.label);
-            if (parent.length) {
-                self.parents.push(parent[0].name);
-                findParents(self, parent[0], menus);
-            }
-        };
-
         var createEvents = function () {
             var events = {};
             return {
@@ -849,7 +837,7 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
         var getMockResourceUrl = function (uri) {
 
             var arr = uri.split('/');
-            if (ENV.mock && arr.length)
+            if (settings.runtime.mock && arr.length)
                 return 'data/' + arr.slice(3).join('.') + ".json";
 
             return uri;
@@ -861,8 +849,8 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
             if (path.indexOf('http') == 0) {
                 uri = path;
             } else {
-                if (path.indexOf(ENV.apiPath) !== 0) {
-                    uri = [ENV.apiPath, path].join('/').replace(/\/\//g, '/');
+                if (path.indexOf(settings.runtime.apiPath) !== 0) {
+                    uri = [settings.runtime.apiPath, path].join('/').replace(/\/\//g, '/');
                 }
                 uri = [host, uri].join('/');
             }
@@ -870,6 +858,7 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
         };
 
         return {
+            settings: settings,
             alert: function (msg, btnText) {
                 console.log(msg, btnText);
             },
@@ -895,8 +884,6 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
                 return new createEvents();
             },
             events: __events,
-            initMenus: initMenus,
-            buildMenuTree: buildMenuTree,
             changeTitle: function (title) {
                 __events.trigger("changeTitle", title);
             },
@@ -926,12 +913,12 @@ angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stat
                 return extMap.hasOwnProperty(ext) ? extMap[ext] : extMap.defaults;
             },
             dialogUpload: function (options) {
-                ngDialog.open({
-                    template: 'base/templates/dialog-container.html',
-                    controller: function ($scope) {
-                        $scope.options = options;
-                    }
-                });
+                //ngDialog.open({
+                //    template: 'base/templates/dialog-container.html',
+                //    controller: function ($scope) {
+                //        $scope.options = options;
+                //    }
+                //});
             }
         };
     }]);
