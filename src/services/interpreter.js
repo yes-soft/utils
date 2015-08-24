@@ -1,8 +1,7 @@
-angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils",
+angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "utils",
     function ($stateParams, oPath, utils) {
 
-        var settings = utils.settings || {};
-        var injector = angular.element(document.body).injector();
+        var settings = utils.settings;
 
         var defaultListOperations = {
             'search': {
@@ -196,5 +195,6 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils"
                 config.form = explainForm(config.form, scope);
                 return config
             }
-        }
+        };
+
     }]);

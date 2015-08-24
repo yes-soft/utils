@@ -1,6 +1,120 @@
 'use strict';
-angular.module('yes.utils', []);
-angular.module('yes.utils').factory('authInterceptor', ['$rootScope', '$q', '$window', '$location', function ($rootScope, $q, $window, $location) {
+angular.module('yes.utils', ['yes.auth']);
+angular.module('yes.utils').provider('utils', [
+    function () {
+        var self = this;
+        self.settings = {
+            version: "0.0.0",
+            language: navigator.language || navigator.userLanguage,
+            templates: {
+                'layout': 'base/templates/layout.html',
+                'login': 'base/templates/login.html',
+                'dashboard': 'base/templates/dashboard.html',
+                'list': 'base/templates/list.uigrid.html',
+                'detail': 'base/templates/detail.html',
+                'searchCommon': 'base/templates/search-common.html'
+            },
+            host: 'self',
+            mock: true,
+            debug: true,
+            pageSize: {
+                defaults: 20,
+                more: 10
+            },
+            headers: {'Content-Type': 'application/json'},
+            runtime: {
+                menuRoot: null,
+                menuApi: 'base/menus',
+                apiPath: "api",
+                serverRoot: 'src',
+                pluginFolder: 'plugins'
+            }
+        };
+
+        var services = {};
+
+        self.getSettings = function () {
+            return self.settings;
+        };
+
+        self.getService = function (name) {
+            var injector = angular.element('body').injector();
+            if (injector.has(name))
+                return injector.get(name);
+            return {};
+        };
+
+        self.addModule = function (name, service) {
+            services[name] = service;
+        };
+
+        var setSettings = function (settings) {
+            self.settings = settings;
+        };
+
+        this.$get = function () {
+
+            return services;
+        };
+    }]);
+angular.module('yes.utils').config(["utilsProvider",
+    function (utilsProvider) {
+
+        var async = function (method, uri, entry, _headers) {
+
+            var $http = utilsProvider.getService('$http');
+            var $q = utilsProvider.getService('$q');
+            var settings = utilsProvider.getSettings();
+
+            var options = {
+                "method": method,
+                "url": uri,
+                "cache": false,
+                "headers": _headers || settings.headers
+            };
+
+            if (entry) {
+                angular.forEach(entry, function (raw, key) {
+                    if (raw == "") {
+                        delete entry[key];
+                    }
+                });
+            }
+
+            if (entry
+                && (method.toLowerCase() == "post" || method.toLowerCase() == "put" )
+                && headers['Content-Type'].indexOf('json') > 0)
+                options.data = entry;
+            else if (entry)
+                options.data = this.serialize(entry);
+
+            var deferred = $q.defer();
+
+            if (!uri)
+                deferred.reject({"message": "Uri is empty!"});
+            else {
+                if (options.data && options.method.toLowerCase() == "get") {
+                    options.url = options.url + "?" + options.data;
+                }
+
+                $http(options).success(function (res) {
+                    if (res.error == 0 || !res.error) {
+                        deferred.resolve(res);
+                    } else if (res.message) {
+                        deferred.reject(res);
+                    } else {
+                        deferred.reject({"message": "服务器异常"});
+                    }
+                }).error(function (error) {
+                    deferred.reject({"message": "无法连接到服务器"});
+                });
+                return deferred.promise;
+            }
+        };
+
+        utilsProvider.addModule("async", async);
+    }]);
+angular.module('yes.auth', []).factory('authInterceptor', ['$q', '$location', function ($q, $location) {
     var redirectOnce = true;
     return {
         request: function (config) {
@@ -26,11 +140,343 @@ angular.module('yes.utils').factory('authInterceptor', ['$rootScope', '$q', '$wi
     $httpProvider.interceptors.push('authInterceptor');
 }]);
 
-angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils",
+//angular.module('yes.utils').config(["$http", "$q", "$location", "utils",
+//    function ($http, $q, $location, utils) {
+//
+//        var injector = angular.element(document.body).injector();
+//
+//        var settings = {
+//            version: "0.0.0",
+//            templates: {
+//                'layout': 'base/templates/layout.html',
+//                'login': 'base/templates/login.html',
+//                'dashboard': 'base/templates/dashboard.html',
+//                'list': 'base/templates/list.uigrid.html',
+//                'detail': 'base/templates/detail.html',
+//                'searchCommon': 'base/templates/search-common.html'
+//            },
+//            gateway: {
+//                host: 'self'
+//            },
+//            runtime: {
+//                "mock": true,
+//                "menuRoot": null,
+//                "menuApi": 'base/menus',
+//                "language": navigator.language || navigator.userLanguage,
+//                "apiPath": "api",
+//                "serverRoot": 'src',
+//                "pluginFolder": 'plugins',
+//                "pageSize": {
+//                    "default": 20,
+//                    "more": 10
+//                },
+//                "debug": true
+//            }
+//        };
+//
+//        if (injector.has('settings'))
+//            settings = injector.get('settings') || {};
+//
+//        var headers = settings.headers;
+//
+//        var gateway = settings.gateway;
+//
+//        var handles = {
+//            async: function (method, uri, entry, _headers) {
+//                var options = {
+//                    "method": method,
+//                    "url": uri,
+//                    "cache": false,
+//                    "headers": _headers || headers
+//                };
+//
+//                if (entry) {
+//                    angular.forEach(entry, function (raw, key) {
+//                        if (raw == "") {
+//                            delete entry[key];
+//                        }
+//                    });
+//                }
+//
+//                if (entry
+//                    && (method.toLowerCase() == "post" || method.toLowerCase() == "put" )
+//                    && headers['Content-Type'].indexOf('json') > 0)
+//                    options.data = entry;
+//                else if (entry)
+//                    options.data = this.serialize(entry);
+//
+//                var deferred = $q.defer();
+//
+//                if (!uri)
+//                    deferred.reject({"message": "Uri is empty!"});
+//                else {
+//                    if (options.data && options.method.toLowerCase() == "get") {
+//                        options.url = options.url + "?" + options.data;
+//                    }
+//
+//                    $http(options).success(function (res) {
+//                        if (res.error == 0 || !res.error) {
+//                            deferred.resolve(res);
+//                        } else if (res.message) {
+//                            deferred.reject(res);
+//                        } else {
+//                            deferred.reject({"message": "服务器异常"});
+//                        }
+//                    }).error(function (error) {
+//                        deferred.reject({"message": "无法连接到服务器"});
+//                    });
+//                    return deferred.promise;
+//                }
+//            },
+//            serialize: function (data) {
+//                if (!angular.isObject(data)) {
+//                    return ( ( data == null ) ? "" : data.toString() );
+//                }
+//                var buffer = [];
+//                for (var name in data) {
+//                    if (!data.hasOwnProperty(name)) {
+//                        continue;
+//                    }
+//                    var value = data[name];
+//
+//                    if (angular.isDate(value) && moment) {
+//                        value = moment(value).format("YYYY-MM-DD HH:mm:ss");
+//                    }
+//
+//                    buffer.push(
+//                        encodeURIComponent(name) + "=" + encodeURIComponent(( value == null ) ? "" : value)
+//                    );
+//                }
+//                var source = buffer.join("&");
+//                return ( source );
+//            },
+//            createDoc: function (raw) {
+//                if (raw && raw.properties && angular.isArray(raw.properties)) {
+//                    angular.forEach(raw.properties, function (props) {
+//                        raw[props.name] = props.value.length == 1 ? props.value[0] : props.value;
+//                    });
+//                    delete raw.properties;
+//                }
+//                return raw;
+//            }
+//        };
+//
+//        var extMap = {
+//            defaults: 'ico ico-file ico-file-1',
+//            xls: 'ico ico-file ico-file-2',
+//            xlsx: 'ico ico-file ico-file-2',
+//            doc: 'ico ico-file ico-file-3',
+//            docx: 'ico ico-file ico-file-3',
+//            ppt: 'ico ico-file ico-file-4',
+//            pptx: 'ico ico-file ico-file-4',
+//            rar: 'ico ico-file ico-file-6',
+//            zip: 'ico ico-file ico-file-7',
+//            html: 'ico ico-file ico-file-10',
+//            js: 'ico ico-file ico-file-11',
+//            xml: 'ico ico-file ico-file-12',
+//            css: 'ico ico-file ico-file-12',
+//            pdf: 'ico ico-file ico-file-17',
+//            txt: 'ico ico-file ico-file-22',
+//            jpg: 'ico ico-file ico-file-31',
+//            gif: 'ico ico-file ico-file-32',
+//            png: 'ico ico-file ico-file-33',
+//            bmp: 'ico ico-file ico-file-34'
+//        };
+//
+//        var createEvents = function () {
+//            var events = {};
+//            return {
+//                on: function (names, handler) {
+//                    names.split(' ').forEach(function (name) {
+//                        if (!events[name]) {
+//                            events[name] = [];
+//                        }
+//                        events[name].push(handler);
+//                    });
+//                    return this;
+//                },
+//                once: function (names, handler) {
+//                    names.split(' ').forEach(function (name) {
+//                        events[name] = [];
+//                        events[name].push(handler);
+//                    });
+//                    return this;
+//                },
+//                trigger: function (name, args) {
+//                    angular.forEach(events[name], function (handler) {
+//                        handler.call(null, args);
+//                    });
+//                    return this;
+//                }
+//            };
+//        };
+//
+//        var __events = new createEvents();
+//
+//        var findInjectServices = function (name) {
+//            try {
+//                return angular.element(document.body).injector().get(name);
+//            } catch (ex) {
+//                return null;
+//            }
+//        };
+//
+//        var host = (gateway.host !== "self") ? gateway.host : (location.protocol + "//" + location.host);
+//        var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
+//
+//        var getMockResourceUrl = function (uri) {
+//
+//            var arr = uri.split('/');
+//            if (settings.runtime.mock && arr.length)
+//                return 'data/' + arr.slice(3).join('.') + ".json";
+//
+//            return uri;
+//        };
+//
+//        var getAbsUrl = function (path) {
+//
+//            var uri = path;
+//            if (path.indexOf('http') == 0) {
+//                uri = path;
+//            } else {
+//                if (path.indexOf(settings.runtime.apiPath) !== 0) {
+//                    uri = [settings.runtime.apiPath, path].join('/').replace(/\/\//g, '/');
+//                }
+//                uri = [host, uri].join('/');
+//            }
+//            return uri;
+//        };
+//
+//        return {
+//            settings: settings,
+//            alert: function (msg, btnText) {
+//                console.log(msg, btnText);
+//            },
+//            root: root,
+//            host: host,
+//            getAbsUrl: getAbsUrl,
+//            serialize: handles.serialize,
+//            format: function (format) {
+//                var args = Array.prototype.slice.call(arguments, 1);
+//                if (!format)
+//                    return "";
+//                return format.replace(/{(\d+)}/g, function (match, number) {
+//                    return typeof args[number] != 'undefined'
+//                        ? args[number]
+//                        : match
+//                        ;
+//                });
+//            },
+//            capitalize: function (string) {
+//                return string.charAt(0).toUpperCase() + string.slice(1);
+//            },
+//            createEvents: function () {
+//                return new createEvents();
+//            },
+//            events: __events,
+//            changeTitle: function (title) {
+//                __events.trigger("changeTitle", title);
+//            },
+//            currentPage: function () {
+//                var p = $location.search()[p];
+//                return parseInt(p) || 1;
+//            },
+//            async: function (method, path, options) {
+//                var uri = getAbsUrl(path);
+//                uri = getMockResourceUrl(uri);
+//                return handles.async(method, uri, options);
+//            },
+//            findViewConfig: function (stateName, page) {
+//                return findInjectServices(stateName + ".config")[page];
+//            },
+//            disableScroll: function () {
+//                document.body.style.overflow = "hidden";
+//                angular.element(window).trigger('resize');
+//            },
+//            resetScroll: function () {
+//                document.body.style.overflow = null;
+//                angular.element(window).trigger('resize');
+//            },
+//            getFileExtCss: function (fileName) {
+//                var re = /(?:\.([^.]+))?$/;
+//                var ext = re.exec(fileName)[1];
+//                return extMap.hasOwnProperty(ext) ? extMap[ext] : extMap.defaults;
+//            },
+//            dialogUpload: function (options) {
+//                //ngDialog.open({
+//                //    template: 'base/templates/dialog-container.html',
+//                //    controller: function ($scope) {
+//                //        $scope.options = options;
+//                //    }
+//                //});
+//            }
+//        };
+//    }]);
+//
+
+angular.module('yes.utils').config(['utilsProvider',
+    function (utilsProvider) {
+
+        var units = 'BKMGTPEZY'.split('');
+
+        function equals(a, b) {
+            return a && a.toLowerCase() === b.toLowerCase()
+        }
+
+        function getSize(bytes, options) {
+            bytes = typeof bytes == 'number' ? bytes : 0;
+            options = options || {};
+            options.fixed = typeof options.fixed == 'number' ? options.fixed : 2;
+            options.spacer = typeof options.spacer == 'string' ? options.spacer : ' ';
+
+            options.calculate = function (spec) {
+                var type = equals(spec, 'si') ? ['k', 'B'] : ['K', 'iB'];
+                var algorithm = equals(spec, 'si') ? 1e3 : 1024;
+                var magnitude = Math.log(bytes) / Math.log(algorithm) | 0;
+                var result = (bytes / Math.pow(algorithm, magnitude));
+                var fixed = result.toFixed(options.fixed);
+                var suffix;
+
+                if (magnitude - 1 < 3 && !equals(spec, 'si') && equals(spec, 'jedec'))
+                    type[1] = 'B';
+
+                suffix = magnitude
+                    ? (type[0] + 'MGTPEZY')[magnitude - 1] + type[1]
+                    : ((fixed | 0) === 1 ? 'Byte' : 'Bytes');
+
+                return {
+                    suffix: suffix,
+                    magnitude: magnitude,
+                    result: result,
+                    fixed: fixed,
+                    bits: {result: result / 8, fixed: (result / 8).toFixed(options.fixed)}
+                }
+            };
+
+            options.to = function (unit, spec) {
+                var algorithm = equals(spec, 'si') ? 1e3 : 1024;
+                var position = units.indexOf(typeof unit == 'string' ? unit[0].toUpperCase() : 'B');
+                var result = bytes;
+
+                if (position === -1 || position === 0) return result.toFixed(2);
+                for (; position > 0; position--) result /= algorithm
+                return result.toFixed(2)
+            };
+
+            options.human = function (spec) {
+                var output = options.calculate(spec);
+                return output.fixed + options.spacer + output.suffix
+            };
+
+            return options;
+        }
+
+        utilsProvider.addModule('getFileSize', getSize);
+    }]);
+angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "utils",
     function ($stateParams, oPath, utils) {
 
-        var settings = utils.settings || {};
-        var injector = angular.element(document.body).injector();
+        var settings = utils.settings;
 
         var defaultListOperations = {
             'search': {
@@ -224,71 +670,14 @@ angular.module('yes.utils').factory('explain', ["$stateParams", "oPath", "utils"
                 config.form = explainForm(config.form, scope);
                 return config
             }
-        }
+        };
+
     }]);
-angular.module('yes.utils').factory('fileSize',
-    function () {
-
-        var units = 'BKMGTPEZY'.split('');
-
-        function equals(a, b) {
-            return a && a.toLowerCase() === b.toLowerCase()
-        }
-
-        return function getSize(bytes, options) {
-            bytes = typeof bytes == 'number' ? bytes : 0;
-            options = options || {};
-            options.fixed = typeof options.fixed == 'number' ? options.fixed : 2;
-            options.spacer = typeof options.spacer == 'string' ? options.spacer : ' ';
-
-            options.calculate = function (spec) {
-                var type = equals(spec, 'si') ? ['k', 'B'] : ['K', 'iB'];
-                var algorithm = equals(spec, 'si') ? 1e3 : 1024;
-                var magnitude = Math.log(bytes) / Math.log(algorithm) | 0;
-                var result = (bytes / Math.pow(algorithm, magnitude));
-                var fixed = result.toFixed(options.fixed);
-                var suffix;
-
-                if (magnitude - 1 < 3 && !equals(spec, 'si') && equals(spec, 'jedec'))
-                    type[1] = 'B';
-
-                suffix = magnitude
-                    ? (type[0] + 'MGTPEZY')[magnitude - 1] + type[1]
-                    : ((fixed | 0) === 1 ? 'Byte' : 'Bytes');
-
-                return {
-                    suffix: suffix,
-                    magnitude: magnitude,
-                    result: result,
-                    fixed: fixed,
-                    bits: {result: result / 8, fixed: (result / 8).toFixed(options.fixed)}
-                }
-            };
-
-            options.to = function (unit, spec) {
-                var algorithm = equals(spec, 'si') ? 1e3 : 1024;
-                var position = units.indexOf(typeof unit == 'string' ? unit[0].toUpperCase() : 'B');
-                var result = bytes;
-
-                if (position === -1 || position === 0) return result.toFixed(2);
-                for (; position > 0; position--) result /= algorithm
-                return result.toFixed(2)
-            };
-
-            options.human = function (spec) {
-                var output = options.calculate(spec);
-                return output.fixed + options.spacer + output.suffix
-            };
-
-            return options;
-        }
-
-    });
-angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils",
-    function ($http, $q, $location, utils) {
+angular.module('yes.utils').config(['utilsProvider',
+    function (utilsProvider) {
         var __menus = {};
 
-        var settings = utils.settings || {};
+        var settings = utilsProvider.settings;
 
         var findParents = function (self, node, menus) {
 
@@ -340,7 +729,7 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
             return result;
         };
 
-        return {
+        var menus = {
             initMenus: initMenus,
             buildMenuTree: function (menus) {
                 var result = [];
@@ -353,9 +742,11 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
                 return result;
             }
         };
+
+        utilsProvider.addModule('menus', menus);
     }]);
-angular.module('yes.utils').factory('oPath', [
-    function () {
+angular.module('yes.utils').config(['utilsProvider',
+    function (utilsProvider) {
         var oPath;
         oPath = (function () {
             var toStr = Object.prototype.toString,
@@ -648,278 +1039,33 @@ angular.module('yes.utils').factory('oPath', [
             return objectPath;
 
         })();
-        return oPath;
+        utilsProvider.addModule('oPath', oPath);
     }]);
-angular.module('yes.utils').factory('utils', ["$http", "$q", "$location", "$stateParams",
-    function ($http, $q, $location, $stateParams) {
+angular.module('yes.utils').config(["utilsProvider",
+    function (utilsProvider) {
 
-        var injector = angular.element(document.body).injector();
-
-        var settings = {
-            version: "0.0.0",
-            templates: {
-                'layout': 'base/templates/layout.html',
-                'login': 'base/templates/login.html',
-                'dashboard': 'base/templates/dashboard.html',
-                'list': 'base/templates/list.uigrid.html',
-                'detail': 'base/templates/detail.html',
-                'searchCommon': 'base/templates/search-common.html'
-            },
-            gateway: {
-                host: 'self'
-            },
-            runtime: {
-                "mock": true,
-                "menuRoot": null,
-                "menuApi": 'base/menus',
-                "language": navigator.language || navigator.userLanguage,
-                "apiPath": "api",
-                "serverRoot": 'src',
-                "pluginFolder": 'plugins',
-                "pageSize": {
-                    "default": 20,
-                    "more": 10
-                },
-                "debug": true
+        var serialize = function (data) {
+            if (!angular.isObject(data)) {
+                return ( ( data == null ) ? "" : data.toString() );
             }
-        };
-        if (injector.has('settings'))
-            settings = injector.get('settings') || {};
+            var buffer = [];
+            for (var name in data) {
+                if (!data.hasOwnProperty(name)) {
+                    continue;
+                }
+                var value = data[name];
 
-        var headers = settings.headers;
-        var gateway = settings.gateway;
-
-        var cacheContainer = {};
-        var __menus = {};
-        var handles = {
-            async: function (method, uri, entry, _headers) {
-                var options = {
-                    "method": method,
-                    "url": uri,
-                    "cache": false,
-                    "headers": _headers || headers
-                };
-
-                if (entry) {
-                    angular.forEach(entry, function (raw, key) {
-                        if (raw == "") {
-                            delete entry[key];
-                        }
-                    });
+                if (angular.isDate(value) && moment) {
+                    value = moment(value).format("YYYY-MM-DD HH:mm:ss");
                 }
 
-                if (entry
-                    && (method.toLowerCase() == "post" || method.toLowerCase() == "put" )
-                    && headers['Content-Type'].indexOf('json') > 0)
-                    options.data = entry;
-                else if (entry)
-                    options.data = this.serialize(entry);
-
-                var deferred = $q.defer();
-
-                if (!uri)
-                    deferred.reject({"message": "Uri is empty!"});
-                else {
-                    if (options.data && options.method.toLowerCase() == "get") {
-                        options.url = options.url + "?" + options.data;
-                    }
-
-                    $http(options).success(function (res) {
-                        if (res.error == 0 || !res.error) {
-                            deferred.resolve(res);
-                        } else if (res.message) {
-                            deferred.reject(res);
-                        } else {
-                            deferred.reject({"message": "服务器异常"});
-                        }
-                    }).error(function (error) {
-                        deferred.reject({"message": "无法连接到服务器"});
-                    });
-                    return deferred.promise;
-                }
-            },
-            serialize: function (data) {
-                if (!angular.isObject(data)) {
-                    return ( ( data == null ) ? "" : data.toString() );
-                }
-                var buffer = [];
-                for (var name in data) {
-                    if (!data.hasOwnProperty(name)) {
-                        continue;
-                    }
-                    var value = data[name];
-
-                    if (angular.isDate(value) && moment) {
-                        value = moment(value).format("YYYY-MM-DD HH:mm:ss");
-                    }
-
-                    buffer.push(
-                        encodeURIComponent(name) + "=" + encodeURIComponent(( value == null ) ? "" : value)
-                    );
-                }
-                var source = buffer.join("&");
-                return ( source );
-            },
-            createDoc: function (raw) {
-                if (raw && raw.properties && angular.isArray(raw.properties)) {
-                    angular.forEach(raw.properties, function (props) {
-                        raw[props.name] = props.value.length == 1 ? props.value[0] : props.value;
-                    });
-                    delete raw.properties;
-                }
-                return raw;
+                buffer.push(
+                    encodeURIComponent(name) + "=" + encodeURIComponent(( value == null ) ? "" : value)
+                );
             }
+            var source = buffer.join("&");
+            return ( source );
         };
 
-        var extMap = {
-            defaults: 'ico ico-file ico-file-1',
-            xls: 'ico ico-file ico-file-2',
-            xlsx: 'ico ico-file ico-file-2',
-            doc: 'ico ico-file ico-file-3',
-            docx: 'ico ico-file ico-file-3',
-            ppt: 'ico ico-file ico-file-4',
-            pptx: 'ico ico-file ico-file-4',
-            rar: 'ico ico-file ico-file-6',
-            zip: 'ico ico-file ico-file-7',
-            html: 'ico ico-file ico-file-10',
-            js: 'ico ico-file ico-file-11',
-            xml: 'ico ico-file ico-file-12',
-            css: 'ico ico-file ico-file-12',
-            pdf: 'ico ico-file ico-file-17',
-            txt: 'ico ico-file ico-file-22',
-            jpg: 'ico ico-file ico-file-31',
-            gif: 'ico ico-file ico-file-32',
-            png: 'ico ico-file ico-file-33',
-            bmp: 'ico ico-file ico-file-34'
-        };
-
-        var createEvents = function () {
-            var events = {};
-            return {
-                on: function (names, handler) {
-                    names.split(' ').forEach(function (name) {
-                        if (!events[name]) {
-                            events[name] = [];
-                        }
-                        events[name].push(handler);
-                    });
-                    return this;
-                },
-                once: function (names, handler) {
-                    names.split(' ').forEach(function (name) {
-                        events[name] = [];
-                        events[name].push(handler);
-                    });
-                    return this;
-                },
-                trigger: function (name, args) {
-                    angular.forEach(events[name], function (handler) {
-                        handler.call(null, args);
-                    });
-                    return this;
-                }
-            };
-        };
-
-        var __events = new createEvents();
-
-        var findInjectServices = function (name) {
-            try {
-                return angular.element(document.body).injector().get(name);
-            } catch (ex) {
-                return null;
-            }
-        };
-
-        var host = (gateway.host !== "self") ? gateway.host : (location.protocol + "//" + location.host);
-        var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
-
-        var getMockResourceUrl = function (uri) {
-
-            var arr = uri.split('/');
-            if (settings.runtime.mock && arr.length)
-                return 'data/' + arr.slice(3).join('.') + ".json";
-
-            return uri;
-        };
-
-        var getAbsUrl = function (path) {
-
-            var uri = path;
-            if (path.indexOf('http') == 0) {
-                uri = path;
-            } else {
-                if (path.indexOf(settings.runtime.apiPath) !== 0) {
-                    uri = [settings.runtime.apiPath, path].join('/').replace(/\/\//g, '/');
-                }
-                uri = [host, uri].join('/');
-            }
-            return uri;
-        };
-
-        return {
-            settings: settings,
-            alert: function (msg, btnText) {
-                console.log(msg, btnText);
-            },
-            root: root,
-            host: host,
-            getAbsUrl: getAbsUrl,
-            serialize: handles.serialize,
-            format: function (format) {
-                var args = Array.prototype.slice.call(arguments, 1);
-                if (!format)
-                    return "";
-                return format.replace(/{(\d+)}/g, function (match, number) {
-                    return typeof args[number] != 'undefined'
-                        ? args[number]
-                        : match
-                        ;
-                });
-            },
-            capitalize: function (string) {
-                return string.charAt(0).toUpperCase() + string.slice(1);
-            },
-            createEvents: function () {
-                return new createEvents();
-            },
-            events: __events,
-            changeTitle: function (title) {
-                __events.trigger("changeTitle", title);
-            },
-            currentPage: function () {
-                var p = $location.search()[p];
-                return parseInt(p) || 1;
-            },
-            async: function (method, path, options) {
-                var uri = getAbsUrl(path);
-                uri = getMockResourceUrl(uri);
-                return handles.async(method, uri, options);
-            },
-            findViewConfig: function (stateName, page) {
-                return findInjectServices(stateName + ".config")[page];
-            },
-            disableScroll: function () {
-                document.body.style.overflow = "hidden";
-                angular.element(window).trigger('resize');
-            },
-            resetScroll: function () {
-                document.body.style.overflow = null;
-                angular.element(window).trigger('resize');
-            },
-            getFileExtCss: function (fileName) {
-                var re = /(?:\.([^.]+))?$/;
-                var ext = re.exec(fileName)[1];
-                return extMap.hasOwnProperty(ext) ? extMap[ext] : extMap.defaults;
-            },
-            dialogUpload: function (options) {
-                //ngDialog.open({
-                //    template: 'base/templates/dialog-container.html',
-                //    controller: function ($scope) {
-                //        $scope.options = options;
-                //    }
-                //});
-            }
-        };
+        utilsProvider.addModule("serialize", serialize);
     }]);
-

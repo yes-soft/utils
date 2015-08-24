@@ -1,8 +1,8 @@
-angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils",
-    function ($http, $q, $location, utils) {
+angular.module('yes.utils').config(['utilsProvider',
+    function (utilsProvider) {
         var __menus = {};
 
-        var settings = utils.settings || {};
+        var settings = utilsProvider.settings;
 
         var findParents = function (self, node, menus) {
 
@@ -44,17 +44,15 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
 
         var initMenus = function (parentId, menus) {
             groupMenus(menus);
-            var result = menus.filter(
+            return menus.filter(
                 function (m) {
                     m.subMenus = __menus[m.uid];
                     return m.parent == parentId;
                 }
             );
-            console.log(result);
-            return result;
         };
 
-        return {
+        var menus = {
             initMenus: initMenus,
             buildMenuTree: function (menus) {
                 var result = [];
@@ -67,4 +65,6 @@ angular.module('yes.utils').factory('menu', ["$http", "$q", "$location", "utils"
                 return result;
             }
         };
+
+        utilsProvider.addModule('menus', menus);
     }]);

@@ -1,4 +1,4 @@
-angular.module('yes.utils').factory('authInterceptor', ['$rootScope', '$q', '$window', '$location', function ($rootScope, $q, $window, $location) {
+angular.module('yes.auth', []).factory('authInterceptor', ['$q', '$location', function ($q, $location) {
     var redirectOnce = true;
     return {
         request: function (config) {
