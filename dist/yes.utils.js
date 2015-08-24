@@ -1,41 +1,15 @@
 'use strict';
-angular.module('yes.utils', ['yes.auth']);
-angular.module('yes.utils').provider('utils', [
-    function () {
+angular.module('yes.utils', ['yes.auth', 'yes.settings']);
+angular.module('yes.utils').provider('utils', ['settingsProvider',
+    function (settingsProvider) {
         var self = this;
-        self.settings = {
-            version: "0.0.0",
-            language: navigator.language || navigator.userLanguage,
-            templates: {
-                'layout': 'base/templates/layout.html',
-                'login': 'base/templates/login.html',
-                'dashboard': 'base/templates/dashboard.html',
-                'list': 'base/templates/list.uigrid.html',
-                'detail': 'base/templates/detail.html',
-                'searchCommon': 'base/templates/search-common.html'
-            },
-            host: 'self',
-            mock: true,
-            debug: true,
-            pageSize: {
-                defaults: 20,
-                more: 10
-            },
-            headers: {'Content-Type': 'application/json'},
-            runtime: {
-                menuRoot: null,
-                menuApi: 'base/menus',
-                apiPath: "api",
-                serverRoot: 'src',
-                pluginFolder: 'plugins'
-            }
-        };
 
         var services = {};
+        self.settings = settingsProvider.getSettings();
 
-        self.getSettings = function () {
-            return self.settings;
-        };
+        console.log(self.settings);
+        self.getSettings = settingsProvider.getSettings;
+        self.setSettings = settingsProvider.setSettings;
 
         self.getService = function (name) {
             var injector = angular.element('body').injector();
@@ -48,10 +22,6 @@ angular.module('yes.utils').provider('utils', [
             services[name] = service;
         };
 
-        self.setSettings = function (settings) {
-            self.settings = settings;
-        };
-
         this.$get = function () {
 
             return services;
@@ -60,30 +30,41 @@ angular.module('yes.utils').provider('utils', [
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
 
+        var settings = utilsProvider.settings;
+
         var getMockResourceUrl = function (uri) {
-            var settings = utilsProvider.getSettings();
             var arr = uri.split('/');
             if (settings.mock && arr.length)
                 return 'data/' + arr.slice(3).join('.') + ".json";
             return uri;
         };
 
-
         var getAbsUrl = (function () {
             var a;
             return function (url) {
-                if (!a) a = document.createElement('a');
-                a.href = url;
-                return a.href;
-            };
-        })();
 
+                if (url.indexOf('http') === 0)
+                    return url;
+
+                if (url.indexOf(settings.apiPath) !== 0) {
+                    url = [settings.apiPath, url].join('/').replace(/\/\//g, '/');
+                }
+
+                var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
+
+                url = [host, url].join('/');
+
+                return url;
+                //if (!a) a = document.createElement('a');
+                //a.href = url;
+                //return a.href;
+            }
+        })();
 
         var async = function (method, path, entry, _headers) {
 
             var $http = utilsProvider.getService('$http');
             var $q = utilsProvider.getService('$q');
-            var settings = utilsProvider.getSettings();
 
             var uri = getAbsUrl(path);
             uri = getMockResourceUrl(uri);
@@ -165,9 +146,7 @@ angular.module('yes.auth', []).factory('authInterceptor', ['$q', '$location', fu
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
 
-        var settings = utilsProvider.getSettings();
-
-        console.log(settings);
+        var settings = utilsProvider.settings;
 
         var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
         var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
@@ -946,3 +925,46 @@ angular.module('yes.utils').config(["utilsProvider",
 
         utilsProvider.addModule("serialize", serialize);
     }]);
+angular.module('yes.settings', []).provider('settings', [function () {
+
+    var self = this;
+
+    //default settings;
+    self.settings = {
+        version: "0.0.0",
+        language: navigator.language || navigator.userLanguage,
+        templates: {
+            'layout': 'base/templates/layout.html',
+            'login': 'base/templates/login.html',
+            'dashboard': 'base/templates/dashboard.html',
+            'list': 'base/templates/list.uigrid.html',
+            'detail': 'base/templates/detail.html',
+            'searchCommon': 'base/templates/search-common.html'
+        },
+        host: 'self',
+        mock: true,
+        debug: true,
+        pageSize: {
+            defaults: 20,
+            more: 10
+        },
+        headers: {'Content-Type': 'application/json'},
+        menuRoot: null,
+        menuApi: 'base/menus',
+        apiPath: "api",
+        serverRoot: 'src',
+        pluginFolder: 'plugins'
+    };
+
+    self.setSettings = function (settings) {
+        self.settings = settings;
+    };
+
+    self.getSettings = function () {
+        return self.settings;
+    };
+
+    this.$get = function () {
+        return self.settings;
+    };
+}]);

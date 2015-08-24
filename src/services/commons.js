@@ -1,9 +1,7 @@
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
 
-        var settings = utilsProvider.getSettings();
-
-        console.log(settings);
+        var settings = utilsProvider.settings;
 
         var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
         var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));

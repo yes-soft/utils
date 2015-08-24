@@ -1,30 +1,41 @@
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
 
+        var settings = utilsProvider.settings;
+
         var getMockResourceUrl = function (uri) {
-            var settings = utilsProvider.getSettings();
             var arr = uri.split('/');
             if (settings.mock && arr.length)
                 return 'data/' + arr.slice(3).join('.') + ".json";
             return uri;
         };
 
-
         var getAbsUrl = (function () {
             var a;
             return function (url) {
-                if (!a) a = document.createElement('a');
-                a.href = url;
-                return a.href;
-            };
-        })();
 
+                if (url.indexOf('http') === 0)
+                    return url;
+
+                if (url.indexOf(settings.apiPath) !== 0) {
+                    url = [settings.apiPath, url].join('/').replace(/\/\//g, '/');
+                }
+
+                var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
+
+                url = [host, url].join('/');
+
+                return url;
+                //if (!a) a = document.createElement('a');
+                //a.href = url;
+                //return a.href;
+            }
+        })();
 
         var async = function (method, path, entry, _headers) {
 
             var $http = utilsProvider.getService('$http');
             var $q = utilsProvider.getService('$q');
-            var settings = utilsProvider.getSettings();
 
             var uri = getAbsUrl(path);
             uri = getMockResourceUrl(uri);
