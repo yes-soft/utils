@@ -9,19 +9,15 @@ angular.module('yes.utils').config(["utilsProvider",
             return uri;
         };
 
-        var getAbsUrl = function (path) {
-            var settings = utilsProvider.getSettings();
-            var uri = path;
-            if (path.indexOf('http') == 0) {
-                uri = path;
-            } else {
-                if (path.indexOf(settings.apiPath) !== 0) {
-                    uri = [settings.apiPath, path].join('/').replace(/\/\//g, '/');
-                }
-                uri = [host, uri].join('/');
-            }
-            return uri;
-        };
+
+        var getAbsUrl = (function () {
+            var a;
+            return function (url) {
+                if (!a) a = document.createElement('a');
+                a.href = url;
+                return a.href;
+            };
+        })();
 
 
         var async = function (method, path, entry, _headers) {

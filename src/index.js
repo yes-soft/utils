@@ -3,6 +3,8 @@ angular.module('yes.utils', ['yes.auth']);
 angular.module('yes.utils').provider('utils', [
     function () {
         var self = this;
+
+        //Fix me, the setting should be done before this.
         self.settings = {
             version: "0.0.0",
             language: navigator.language || navigator.userLanguage,
@@ -48,7 +50,7 @@ angular.module('yes.utils').provider('utils', [
             services[name] = service;
         };
 
-        var setSettings = function (settings) {
+        self.setSettings = function (settings) {
             self.settings = settings;
         };
 

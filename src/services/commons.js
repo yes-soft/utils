@@ -1,8 +1,12 @@
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
 
-        //var host = (gateway.host !== "self") ? gateway.host : (location.protocol + "//" + location.host);
-        //var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
+        var settings = utilsProvider.getSettings();
+
+        console.log(settings);
+
+        var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
+        var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
 
         var services = {
             format: function (format) {
@@ -51,5 +55,7 @@ angular.module('yes.utils').config(["utilsProvider",
             }
         }
 
+        utilsProvider.addModule('host', host);
+        utilsProvider.addModule('root', root);
     }]);
 
