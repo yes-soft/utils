@@ -372,12 +372,16 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
             return rv;
         };
 
+        var injector = angular.element('.body').injector();
         var getConfig = function (name, pageName) {
-            try {
-                return injector.get(name + ".config")[pageName];
-            } catch (ex) {
-                return null;
+            var service = name + ".config";
+            if (injector.has(service)) {
+
+                var config = injector.get(service);
+                if (config.hasOwnProperty(pageName))
+                    return config[pageName];
             }
+            return null;
         };
 
         var invoke = function (fn, context) {
