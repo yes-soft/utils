@@ -165,8 +165,8 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         var getDefaultSettings = function () {
             var __default = getConfig($stateParams.name, '_default') || {};
             __default = angular.extend({list: {}, form: {}}, __default);
-            overrideDefault(__default.form, 'template', [utils.root, plugins.templates.detail].join('/'));
-            overrideDefault(__default.list, 'template', [utils.root, plugins.templates.list].join('/'));
+            overrideDefault(__default.form, 'template', [utils.root, settings.templates.detail].join('/'));
+            overrideDefault(__default.list, 'template', [utils.root, settings.templates.list].join('/'));
             overrideDefault(__default.list, 'pageSize', settings.pageSize['default']);
             return __default;
         };

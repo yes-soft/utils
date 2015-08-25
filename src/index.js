@@ -6,11 +6,9 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
 
         var services = {};
         self.settings = settingsProvider.getSettings();
-
-        console.log(self.settings);
         self.getSettings = settingsProvider.getSettings;
         self.setSettings = settingsProvider.setSettings;
-
+        services.settings = self.settings;
         self.getService = function (name) {
             var injector = angular.element('body').injector();
             if (injector.has(name))

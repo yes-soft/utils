@@ -1,5 +1,5 @@
-angular.module('yes.utils').config(['utilsProvider',
-    function (utilsProvider) {
+angular.module('yes.utils').factory('oPath', [
+    function () {
         var oPath;
         oPath = (function () {
             var toStr = Object.prototype.toString,
@@ -292,5 +292,5 @@ angular.module('yes.utils').config(['utilsProvider',
             return objectPath;
 
         })();
-        utilsProvider.addModule('oPath', oPath);
+        return oPath;
     }]);

@@ -6,11 +6,9 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
 
         var services = {};
         self.settings = settingsProvider.getSettings();
-
-        console.log(self.settings);
         self.getSettings = settingsProvider.getSettings;
         self.setSettings = settingsProvider.setSettings;
-
+        services.settings = self.settings;
         self.getService = function (name) {
             var injector = angular.element('body').injector();
             if (injector.has(name))
@@ -498,8 +496,8 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         var getDefaultSettings = function () {
             var __default = getConfig($stateParams.name, '_default') || {};
             __default = angular.extend({list: {}, form: {}}, __default);
-            overrideDefault(__default.form, 'template', [utils.root, plugins.templates.detail].join('/'));
-            overrideDefault(__default.list, 'template', [utils.root, plugins.templates.list].join('/'));
+            overrideDefault(__default.form, 'template', [utils.root, settings.templates.detail].join('/'));
+            overrideDefault(__default.list, 'template', [utils.root, settings.templates.list].join('/'));
             overrideDefault(__default.list, 'pageSize', settings.pageSize['default']);
             return __default;
         };
@@ -601,8 +599,8 @@ angular.module('yes.utils').config(['utilsProvider',
 
         utilsProvider.addModule('menus', menus);
     }]);
-angular.module('yes.utils').config(['utilsProvider',
-    function (utilsProvider) {
+angular.module('yes.utils').factory('oPath', [
+    function () {
         var oPath;
         oPath = (function () {
             var toStr = Object.prototype.toString,
@@ -895,7 +893,7 @@ angular.module('yes.utils').config(['utilsProvider',
             return objectPath;
 
         })();
-        utilsProvider.addModule('oPath', oPath);
+        return oPath;
     }]);
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
