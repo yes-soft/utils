@@ -1,5 +1,5 @@
 'use strict';
-angular.module('yes.utils', ['yes.auth', 'yes.settings']);
+angular.module('yes.utils', ['yes.auth', 'yes.settings','oc.lazyLoad']);
 angular.module('yes.utils').provider('utils', ['settingsProvider',
     function (settingsProvider) {
         var self = this;

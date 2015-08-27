@@ -1,47 +1,10 @@
-angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "utils",
-    function ($stateParams, oPath, utils) {
+angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "utils", "$ocLazyLoad",
+    function ($stateParams, oPath, utils, $ocLazyLoad) {
 
         var settings = utils.settings;
 
-        var defaultListOperations = {
-            'search': {
-                'name': '查找'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'add': {
-                'name': '新建'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
-
-        var defaultFormOperations = {
-            'save': {
-                'name': '保存'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
-
-        var array2Object = function (arr, key) {
-            var rv = {};
-            for (var i = 0; i < arr.length; ++i) {
-                if (arr[i].hasOwnProperty(key))
-                    rv[arr[i][key]] = arr[i];
-                else
-                    rv[i] = arr[i];
-            }
-            return rv;
-        };
-
         var injector = angular.element('.body').injector();
+
         var getConfig = function (name, pageName) {
             var service = name + ".config";
             if (injector.has(service)) {
@@ -52,17 +15,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
             }
             return null;
         };
-
-        var invoke = function (fn, context) {
-            if (angular.isFunction(fn)) {
-                injector.invoke(fn, context);
-            } else if (angular.isArray(fn)) {
-                angular.forEach(fn, function (f) {
-                    invoke(f, context);
-                });
-            }
-        };
-
 
         var explainOperations = function (config, scope) {
 
@@ -94,6 +46,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                     operations.push(entry);
                 }
             });
+
             config.operations = operations;
             return config;
         };
@@ -101,7 +54,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         var explainList = function (config, scope) {
             var context = {scope: scope, list: config.list};
             var resolves = oPath.get(config, 'list.resolves', []);
-            invoke(resolves, context);
+            utils.invoke(resolves, context);
             return config
         };
 
@@ -125,7 +78,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
             var properties = oPath.get(config, 'schema.properties', {});
             if (angular.isArray(properties)) {
-                config.schema.properties = array2Object(properties, 'key');
+                config.schema.properties = utils.array2Object(properties, 'key');
             }
 
             var context = {scope: scope, form: config.form};
@@ -149,7 +102,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
             }
 
             var resolves = oPath.get(config, 'resolves', []);
-            invoke(resolves, context);
+            utils.invoke(resolves, context);
             return config;
         };
 
@@ -185,7 +138,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
                 overrideProperties(config.form, defaultSettings.form);
                 overrideProperties(config.list, defaultSettings.list);
-
 
                 config.list.template = getFullTemplatePath(config.list.template);
                 config.form.template = getFullTemplatePath(config.form.template);

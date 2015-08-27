@@ -6,6 +6,20 @@ angular.module('yes.utils').config(["utilsProvider",
         var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
         var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
 
+        var injector = function () {
+            return angular.element('body').injector();
+        };
+
+        var invoke = function (fn, context) {
+            if (angular.isFunction(fn)) {
+                injector().invoke(fn, context);
+            } else if (angular.isArray(fn)) {
+                angular.forEach(fn, function (f) {
+                    invoke(f, context);
+                });
+            }
+        };
+
         var services = {
             format: function (format) {
                 var args = Array.prototype.slice.call(arguments, 1);
@@ -33,7 +47,6 @@ angular.module('yes.utils').config(["utilsProvider",
                 document.body.style.overflow = null;
                 angular.element(window).trigger('resize');
             },
-
             dialogUpload: function (options) {
                 console.log(options);
                 //ngDialog.open({
@@ -42,10 +55,21 @@ angular.module('yes.utils').config(["utilsProvider",
                 //        $scope.options = options;
                 //    }
                 //});
-            }
-
+            },
+            array2Object: function (arr, key) {
+                var rv = {};
+                for (var i = 0; i < arr.length; ++i) {
+                    if (arr[i].hasOwnProperty(key))
+                        rv[arr[i][key]] = arr[i];
+                    else
+                        rv[i] = arr[i];
+                }
+                return rv;
+            },
+            invoke: invoke
 
         };
+
 
         for (var key in services) {
             if (services.hasOwnProperty(key)) {
