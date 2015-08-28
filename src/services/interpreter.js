@@ -3,32 +3,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
         var settings = utils.settings;
 
-        var defaultListOperations = {
-            'search': {
-                'name': '查找'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'add': {
-                'name': '新建'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
-
-        var defaultFormOperations = {
-            'save': {
-                'name': '保存'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
 
         var array2Object = function (arr, key) {
             var rv = {};
@@ -42,6 +16,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         };
 
         var injector = angular.element('body').injector();
+
         var getConfig = function (name, pageName) {
             var service = name + ".config";
             if (injector.has(service)) {
