@@ -9,6 +9,7 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
         self.getSettings = settingsProvider.getSettings;
         self.setSettings = settingsProvider.setSettings;
         services.settings = self.settings;
+
         self.getService = function (name) {
             var injector = angular.element('body').injector();
             if (injector.has(name))
@@ -21,9 +22,9 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
         };
 
         this.$get = function () {
-
             return services;
         };
+
     }]);
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
@@ -372,7 +373,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
             return rv;
         };
 
-        var injector = angular.element('.body').injector();
+        var injector = angular.element('body').injector();
         var getConfig = function (name, pageName) {
             var service = name + ".config";
             if (injector.has(service)) {
