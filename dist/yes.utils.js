@@ -84,7 +84,7 @@ angular.module('yes.utils').config(["utilsProvider",
 
             if (entry
                 && (method.toLowerCase() == "post" || method.toLowerCase() == "put" )
-                && options.headers['Content-Type'].indexOf('json') > 0)
+                && ((!angular.isString(options.headers)) || options.headers['Content-Type'].indexOf('json') > 0))
                 options.data = entry;
             else if (entry)
                 options.data = this.serialize(entry);
