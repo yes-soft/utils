@@ -1,5 +1,5 @@
 'use strict';
-angular.module('yes.utils', ['yes.auth', 'yes.settings']);
+angular.module('yes.utils', ['yes.auth', 'yes.settings','oc.lazyLoad']);
 angular.module('yes.utils').provider('utils', ['settingsProvider',
     function (settingsProvider) {
         var self = this;
@@ -9,7 +9,6 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
         self.getSettings = settingsProvider.getSettings;
         self.setSettings = settingsProvider.setSettings;
         services.settings = self.settings;
-
         self.getService = function (name) {
             var injector = angular.element('body').injector();
             if (injector.has(name))
@@ -22,9 +21,9 @@ angular.module('yes.utils').provider('utils', ['settingsProvider',
         };
 
         this.$get = function () {
+
             return services;
         };
-
     }]);
 angular.module('yes.utils').config(["utilsProvider",
     function (utilsProvider) {
@@ -85,7 +84,7 @@ angular.module('yes.utils').config(["utilsProvider",
 
             if (entry
                 && (method.toLowerCase() == "post" || method.toLowerCase() == "put" )
-                && headers['Content-Type'].indexOf('json') > 0)
+                && options.headers['Content-Type'].indexOf('json') > 0)
                 options.data = entry;
             else if (entry)
                 options.data = this.serialize(entry);
@@ -150,6 +149,20 @@ angular.module('yes.utils').config(["utilsProvider",
         var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
         var root = host + location.pathname.substr(0, location.pathname.lastIndexOf("/"));
 
+        var injector = function () {
+            return angular.element('body').injector();
+        };
+
+        var invoke = function (fn, context) {
+            if (angular.isFunction(fn)) {
+                injector().invoke(fn, context);
+            } else if (angular.isArray(fn)) {
+                angular.forEach(fn, function (f) {
+                    invoke(f, context);
+                });
+            }
+        };
+
         var services = {
             format: function (format) {
                 var args = Array.prototype.slice.call(arguments, 1);
@@ -177,7 +190,6 @@ angular.module('yes.utils').config(["utilsProvider",
                 document.body.style.overflow = null;
                 angular.element(window).trigger('resize');
             },
-
             dialogUpload: function (options) {
                 console.log(options);
                 //ngDialog.open({
@@ -186,10 +198,21 @@ angular.module('yes.utils').config(["utilsProvider",
                 //        $scope.options = options;
                 //    }
                 //});
-            }
-
+            },
+            array2Object: function (arr, key) {
+                var rv = {};
+                for (var i = 0; i < arr.length; ++i) {
+                    if (arr[i].hasOwnProperty(key))
+                        rv[arr[i][key]] = arr[i];
+                    else
+                        rv[i] = arr[i];
+                }
+                return rv;
+            },
+            invoke: invoke
 
         };
+
 
         for (var key in services) {
             if (services.hasOwnProperty(key)) {
@@ -335,32 +358,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
         var settings = utils.settings;
 
-        var defaultListOperations = {
-            'search': {
-                'name': '查找'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'add': {
-                'name': '新建'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
-
-        var defaultFormOperations = {
-            'save': {
-                'name': '保存'
-            },
-            'reset': {
-                'name': '重置'
-            },
-            'del': {
-                'name': '删除'
-            }
-        };
 
         var array2Object = function (arr, key) {
             var rv = {};
@@ -374,6 +371,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         };
 
         var injector = angular.element('body').injector();
+
         var getConfig = function (name, pageName) {
             var service = name + ".config";
             if (injector.has(service)) {
@@ -387,6 +385,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
         var invoke = function (fn, context) {
             if (angular.isFunction(fn)) {
+                console.log(fn.constructor.toString());
                 injector.invoke(fn, context);
             } else if (angular.isArray(fn)) {
                 angular.forEach(fn, function (f) {
@@ -433,6 +432,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         var explainList = function (config, scope) {
             var context = {scope: scope, list: config.list};
             var resolves = oPath.get(config, 'list.resolves', []);
+            console.log("test 111 ",context);
             invoke(resolves, context);
             return config
         };
