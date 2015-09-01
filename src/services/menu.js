@@ -32,13 +32,17 @@ angular.module('yes.utils').config(['utilsProvider',
         };
 
         var groupMenus = function (menus) {
+            var __pairs = {};
             angular.forEach(menus, function (m) {
+                __pairs[m.uid] = m;
                 fixedUrl(m);
-
                 if (angular.isString(m.uid) && m.parent && m.type && m.type.toLowerCase() == "menu") {
                     __menus[m.parent] = __menus[m.parent] || [];
                     __menus[m.parent].push(m);
                 }
+            });
+            angular.forEach(menus, function (m) {
+                m.parentNode = __pairs[m.parent];
             });
         };
 
