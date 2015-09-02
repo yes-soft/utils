@@ -2,19 +2,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
     function ($stateParams, oPath, utils) {
 
         var settings = utils.settings;
-
-
-        var array2Object = function (arr, key) {
-            var rv = {};
-            for (var i = 0; i < arr.length; ++i) {
-                if (arr[i].hasOwnProperty(key))
-                    rv[arr[i][key]] = arr[i];
-                else
-                    rv[i] = arr[i];
-            }
-            return rv;
-        };
-
         var injector = angular.element('body').injector();
 
         var getConfig = function (name, pageName) {
@@ -37,7 +24,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                 });
             }
         };
-
 
         var explainOperations = function (config, scope) {
 
@@ -100,7 +86,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
             var properties = oPath.get(config, 'schema.properties', {});
             if (angular.isArray(properties)) {
-                config.schema.properties = array2Object(properties, 'key');
+                config.schema.properties = utils.array2Object(properties, 'key');
             }
 
             var context = {scope: scope, form: config.form};
@@ -142,12 +128,12 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
         };
 
         var getDefaultSettings = function () {
-            var __default = getConfig($stateParams.name, '_default') || {};
-            __default = angular.extend({list: {}, form: {}}, __default);
-            overrideDefault(__default.form, 'template', [utils.root, settings.templates.detail].join('/'));
-            overrideDefault(__default.list, 'template', [utils.root, settings.templates.list].join('/'));
-            overrideDefault(__default.list, 'pageSize', settings.pageSize['default']);
-            return __default;
+            var defaults = getConfig($stateParams.name, 'defaults') || {};
+            defaults = angular.extend({list: {}, form: {}}, defaults);
+            overrideDefault(defaults.form, 'template', [utils.root, settings.templates.detail].join('/'));
+            overrideDefault(defaults.list, 'template', [utils.root, settings.templates.list].join('/'));
+            overrideDefault(defaults.list, 'pageSize', settings.pageSize['defaults']);
+            return defaults;
         };
 
         return {

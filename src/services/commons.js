@@ -26,10 +26,7 @@ angular.module('yes.utils').config(["utilsProvider",
                 if (!format)
                     return "";
                 return format.replace(/{(\d+)}/g, function (match, number) {
-                    return typeof args[number] != 'undefined'
-                        ? args[number]
-                        : match
-                        ;
+                    return typeof args[number] != 'undefined' ? args[number] : match;
                 });
             },
             capitalize: function (string) {
@@ -48,13 +45,16 @@ angular.module('yes.utils').config(["utilsProvider",
                 angular.element(window).trigger('resize');
             },
             dialogUpload: function (options) {
-                console.log(options);
-                //ngDialog.open({
-                //    template: 'base/templates/dialog-container.html',
-                //    controller: function ($scope) {
-                //        $scope.options = options;
-                //    }
-                //});
+                if (injector().has('ngDialog')) {
+                    injector().get('ngDialog').open({
+                        template: settings.templates.dialog,
+                        controller: function ($scope) {
+                            $scope.options = options;
+                        }
+                    });
+                } else {
+                    console.log('ngDialog no found');
+                }
             },
             array2Object: function (arr, key) {
                 var rv = {};
@@ -66,10 +66,20 @@ angular.module('yes.utils').config(["utilsProvider",
                 }
                 return rv;
             },
-            invoke: invoke
-
+            invoke: invoke,
+            getAbsUrl: function (path) {
+                var uri = path;
+                if (path.indexOf('http') == 0) {
+                    uri = path;
+                } else {
+                    if (path.indexOf(settings.apiPath) !== 0) {
+                        uri = [settings.apiPath, path].join('/').replace(/\/\//g, '/');
+                    }
+                    uri = [host, uri].join('/');
+                }
+                return uri;
+            }
         };
-
 
         for (var key in services) {
             if (services.hasOwnProperty(key)) {

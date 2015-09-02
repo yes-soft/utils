@@ -22,10 +22,10 @@ angular.module('yes.utils').config(["utilsProvider",
                 }
 
                 var host = (settings.host !== "self") ? settings.host : (location.protocol + "//" + location.host);
-
                 url = [host, url].join('/');
 
                 return url;
+
                 //if (!a) a = document.createElement('a');
                 //a.href = url;
                 //return a.href;
