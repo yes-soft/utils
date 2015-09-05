@@ -1,6 +1,6 @@
 angular.module('yes.utils').config(['utilsProvider',
     function (utilsProvider) {
-        var __menus = {};
+        var __menus, __operations;
 
         var settings = utilsProvider.settings;
 
@@ -36,9 +36,15 @@ angular.module('yes.utils').config(['utilsProvider',
             angular.forEach(menus, function (m) {
                 __pairs[m.uid] = m;
                 fixedUrl(m);
-                if (angular.isString(m.uid) && m.parent && m.type && m.type.toLowerCase() == "menu") {
-                    __menus[m.parent] = __menus[m.parent] || [];
-                    __menus[m.parent].push(m);
+                if (angular.isString(m.uid) && m.parent && m.type) {
+
+                    if (m.type.toLowerCase() == "menu") {
+                        __menus[m.parent] = __menus[m.parent] || [];
+                        __menus[m.parent].push(m);
+                    } else if (m.type.toLowerCase() == "function") {
+                        __operations[m.parent] = __operations[m.parent] || [];
+                        __operations[m.parent].push(m);
+                    }
                 }
             });
             angular.forEach(menus, function (m) {
@@ -47,10 +53,16 @@ angular.module('yes.utils').config(['utilsProvider',
         };
 
         var initMenus = function (parentId, menus) {
+            __menus = {};
+            __operations = {};
             groupMenus(menus);
             return menus.filter(
                 function (m) {
                     m.subMenus = __menus[m.uid];
+
+                    if (__operations.hasOwnProperty(m.uid)) {
+                        m.operations = __operations[m.uid];
+                    }
                     return m.parent == parentId;
                 }
             );
