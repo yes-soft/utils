@@ -153,6 +153,8 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
                 config = explainOperations(config, scope);
 
+                //config.form = explainOperations(config, scope);  //TODO;
+
                 //validateAuthority(config.form.operations);
                 //validateAuthority(config.list.operations);
 
