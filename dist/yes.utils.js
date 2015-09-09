@@ -392,11 +392,10 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
         var explainOperations = function (config, scope) {
 
-            var ops = oPath.get(config, 'operation', []);
-            if (!ops)
-                return config;
+            var ops = oPath.get(config, 'operation', {});
 
             var operations = [];
+
             var defaults = {
                 add: {
                     'name': '新建',
@@ -407,6 +406,7 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                     'action': scope.action.del
                 }
             };
+
             var context = {scope: scope};
 
             angular.forEach(ops, function (op, key) {
@@ -417,6 +417,54 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                             injector.invoke(op.action, context);
                         };
                     }
+                    operations.push(entry);
+                }
+            });
+            config.operations = operations;
+            return config;
+        };
+
+        var explainFormOperations = function (config, scope) {
+            var ops = oPath.get(config, 'operation', {});
+
+            var operations = [];
+            var defaults = {
+                save: {
+                    'name': '保存',
+                    'action': scope.action.save,
+                    'type': 'submit',
+                    'icon': 'fa-save'
+                },
+                cancel: {
+                    'name': '重置',
+                    'action': scope.action.cancel,
+                    'type': 'button',
+                    'icon': 'fa-undo'
+                },
+                close: {
+                    'name': '返回',
+                    'action': scope.action.close,
+                    'type': 'button',
+                    'icon': 'fa-close'
+                }
+            };
+            var context = {scope: scope};
+
+            angular.forEach(defaults, function (value, key) {
+                if (!ops.hasOwnProperty(key) || ops[key]) {
+                    ops[key] = true;
+                }
+            });
+
+            angular.forEach(ops, function (op, key) {
+                if (op) {
+                    var entry = defaults[key] || {'name': op.name, action: op.action, icon: op.icon};
+                    if (angular.isFunction(op.action)) {
+                        entry.action = function () {
+                            injector.invoke(op.action, context);
+                        };
+                    }
+                    entry.type = entry.type || 'button';
                     operations.push(entry);
                 }
             });
@@ -518,11 +566,12 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
                 config = explainOperations(config, scope);
 
+                config.form = explainOperations(config.form, scope);
                 //validateAuthority(config.form.operations);
                 //validateAuthority(config.list.operations);
 
                 config = explainList(config, scope);
-                config.form = explainForm(config.form, scope);
+                config.form = explainFormOperations(config.form, scope);
                 return config
             }
         };
