@@ -93,10 +93,19 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
 
             angular.forEach(ops, function (op, key) {
                 if (op) {
-                    var entry = defaults[key] || {'name': op.name, action: op.action, icon: op.icon};
+
+                    var entry = defaults[key] || {'name': op.name, action: op.action, icon: op.icon, type: op.type};
+
                     if (angular.isFunction(op.action)) {
-                        entry.action = function () {
-                            injector.invoke(op.action, context);
+                        entry.action = function (form) {
+                            if (op.type == "submit" && angular.isDefined(form)) {
+                                scope.$broadcast('schemaFormValidate');
+                                if (form.$valid) {
+                                    injector.invoke(op.action, context);
+                                }
+                            } else {
+                                injector.invoke(op.action, context);
+                            }
                         };
                     }
                     entry.type = entry.type || 'button';
@@ -195,7 +204,6 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                 overrideProperties(config.form, defaultSettings.form);
                 overrideProperties(config.list, defaultSettings.list);
 
-
                 config.list.template = getFullTemplatePath(config.list.template);
                 config.form.template = getFullTemplatePath(config.form.template);
 
@@ -206,7 +214,9 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                 //validateAuthority(config.list.operations);
 
                 config = explainList(config, scope);
+                config.form = explainForm(config.form, scope);
                 config.form = explainFormOperations(config.form, scope);
+
                 return config
             }
         };
