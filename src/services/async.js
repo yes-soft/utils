@@ -68,7 +68,9 @@ angular.module('yes.utils').config(["utilsProvider",
                 deferred.reject({"message": "Uri is empty!"});
             else {
                 if (options.data && options.method.toLowerCase() == "get") {
-                    options.url = options.url + "?" + options.data;
+                    options.url = options.url + "?" + options.data + "&r_=" + Math.random() * 10000;
+                } else if (options.method.toLowerCase() == "get") {
+                    options.url += "?r_=" + Math.random() * 10000;
                 }
 
                 $http(options).success(function (res) {
