@@ -64,13 +64,18 @@ angular.module('yes.utils').config(["utilsProvider",
 
             var deferred = $q.defer();
 
+            var getSeparator = function(url){ 
+                return url.indexOf('?')>-1?"&":"?";
+            };
+
             if (!uri)
                 deferred.reject({"message": "Uri is empty!"});
             else {
+
                 if (options.data && options.method.toLowerCase() == "get") {
-                    options.url = options.url + "?" + options.data + "&r_=" + Math.random() * 10000;
+                    options.url = options.url + getSeparator(options.url) + options.data + "&r_=" + Math.random() * 10000;
                 } else if (options.method.toLowerCase() == "get") {
-                    options.url += "?r_=" + Math.random() * 10000;
+                    options.url += getSeparator(options.url) + "r_=" + Math.random() * 10000;
                 }
 
                 $http(options).success(function (res) {
@@ -82,7 +87,10 @@ angular.module('yes.utils').config(["utilsProvider",
                         deferred.reject({"message": "服务器异常"});
                     }
                 }).error(function (error) {
-                    deferred.reject({"message": "无法连接到服务器"});
+                    var message = "服务器异常";
+                    if (error)
+                        message = error.message || message;
+                    deferred.reject({"message": message});
                 });
                 return deferred.promise;
             }
