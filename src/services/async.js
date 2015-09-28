@@ -64,8 +64,8 @@ angular.module('yes.utils').config(["utilsProvider",
 
             var deferred = $q.defer();
 
-            var getSeparator = function(url){ 
-                return url.indexOf('?')>-1?"&":"?";
+            var getSeparator = function (url) {
+                return url.indexOf('?') > -1 ? "&" : "?";
             };
 
             if (!uri)
@@ -79,7 +79,7 @@ angular.module('yes.utils').config(["utilsProvider",
                 }
 
                 $http(options).success(function (res) {
-                    if (res.error == 0 || !res.error) {
+                    if (res.error == 0 || res.error == 200 || res.error == 201 || !res.error) {
                         deferred.resolve(res);
                     } else if (res.message) {
                         deferred.reject(res);
