@@ -162,6 +162,16 @@ angular.module('yes.utils').factory('interpreter', ["$stateParams", "oPath", "ut
                         if (angular.isObject(entry)) {
                             entry.required = entry.required || config.schema.properties[entry.key].required;
                         }
+
+                        //for (var prop in entry) {
+                        //    if (entry.hasOwnProperty(prop) && angular.isFunction(entry[prop])) {
+                        //        var raw = entry[prop];
+                        //        entry[prop] = new function () {
+                        //            raw();
+                        //        };
+                        //    }
+                        //}
+
                     });
                 });
             }
