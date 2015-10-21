@@ -73,9 +73,9 @@ angular.module('yes.utils').config(["utilsProvider",
             else {
 
                 if (options.data && options.method.toLowerCase() == "get") {
-                    options.url = options.url + getSeparator(options.url) + options.data + "&r_=" + Math.random() * 10000;
+                    options.url = options.url + getSeparator(options.url) + options.data + "&r_=" + Math.floor(Math.random() * 10000);
                 } else if (options.method.toLowerCase() == "get") {
-                    options.url += getSeparator(options.url) + "r_=" + Math.random() * 10000;
+                    options.url += getSeparator(options.url) + "r_=" + Math.floor(Math.random() * 10000);
                 }
 
                 $http(options).success(function (res) {
