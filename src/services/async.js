@@ -47,7 +47,7 @@ angular.module('yes.utils').config(["utilsProvider",
                 "headers": _headers || settings.headers
             };
 
-            if (entry) {
+            if (entry && entry !== false) {
                 angular.forEach(entry, function (raw, key) {
                     if (raw == "") {
                         delete entry[key];
